@@ -1,0 +1,127 @@
+tf = 2;                  % seconds per edge
+N  = 200;                % points per edge (more points = smoother)
+pause_dt = tf/(N-1);     % time step between points
+
+% Triangle vertices in TASK SPACE [x y z gamma]  (Y must be 0)
+pos1 = [93.0814  0 208.0080   0];
+pos2 = [50.4615  0  70.4067 -90];
+pos3 = [206.0101 0  42.3166 -45];
+
+% Start/end velocity for cubic (usually 0 for these labs)
+v0 = 0; vf = 0;
+
+%% ------------------- INIT ROBOT + TG -------------------
+robot = Robot();
+tg = TrajGenerator();
+
+% Move to first vertex (use IK so it matches your task-space vertex)
+q_start = ik3001(robot, pos1);
+interpolate_jp(robot, q_start, 2);
+pause(0.5);
+
+%% ------------------- BUILD TRAJECTORY COEFFS -------------------
+% Each row will store coefficients [a0 a1 a2 a3] for that coordinate
+% Edge order: pos1->pos2, pos2->pos3, pos3->pos1
+edges = {pos1, pos2;
+         pos2, pos3;
+         pos3, pos1};
+
+Ax = zeros(3,4);
+Ay = zeros(3,4);
+Az = zeros(3,4);
+Ag = zeros(3,4);
+
+for e = 1:3
+    p0 = edges{e,1};
+    pf = edges{e,2};
+
+    % Cubic coefficient solve expects vars = [t0 tf q0 qf v0 vf]
+    Ax(e,:) = tg.cubic_traj(tg, [0 tf p0(1) pf(1) v0 vf]).';   % x
+    Ay(e,:) = tg.cubic_traj(tg, [0 tf p0(2) pf(2) v0 vf]).';   % y (should be 0 anyway)
+    Az(e,:) = tg.cubic_traj(tg, [0 tf p0(3) pf(3) v0 vf]).';   % z
+    Ag(e,:) = tg.cubic_traj(tg, [0 tf p0(4) pf(4) v0 vf]).';   % gamma
+end
+
+%% ------------------- PREALLOC DATA STORAGE -------------------
+total_pts = 3*N;
+
+meas_q   = zeros(total_pts, 4);   % measured joint positions
+meas_t   = zeros(total_pts, 1);   % timestamps
+
+idx = 1;
+t_global0 = tic;                 % global timer for plotting later
+
+%% ------------------- EXECUTE TRAJECTORY + RECORD -------------------
+
+qs = ik3001(robot, pos2);
+interpolate_jp(robot, qs, 2);
+for e = 1:3
+    % time samples for this edge
+    ts = linspace(0, tf, N);
+    
+    if (e == 1)
+        qs = ik3001(robot, pos1);
+        interpolate_jp(robot, qs, 2);
+    elseif (e == 2)
+        qs = ik3001(robot,pos2);
+        interpolate_jp(robot, qs, 2);
+    elseif (e == 3)
+        qs = ik3001(robot, pos3);
+        interpolate_jp(robot, qs, 2);
+    end
+
+    for k = 1:N
+        t = ts(k);
+
+        % Evaluate task-space trajectories (all scalars)
+        x = tg.eval_traj(Ax(e,:), t);
+        y = tg.eval_traj(Ay(e,:), t);
+        z = tg.eval_traj(Az(e,:), t);
+        g = tg.eval_traj(Ag(e,:), t);
+
+        target = [x y z g];
+
+        % IK -> joint targets
+        q_cmd = ik3001(robot, target);
+
+        % Send joints (fast step command)
+        % If your Robot class does NOT have writeJoints, replace this with:
+        % interpolate_jp(robot, q_cmd, pause_dt);
+
+        % Record measured joints + time
+        meas = measure_js(robot, true, false);   % returns [1x4] joints (deg)
+        meas_q(idx,:) = meas(1,:);
+        meas_t(idx)   = toc(t_global0);
+
+        idx = idx + 1;
+
+        pause(pause_dt);
+    end
+end
+
+% Trim in case idx didn’t hit exactly total_pts (safety)
+meas_q = meas_q(1:idx-1, :);
+meas_t = meas_t(1:idx-1);
+
+%% ------------------- FK: JOINT -> TASK SPACE -------------------
+task_xyz = zeros(size(meas_q,1), 3);
+
+for i = 1:size(meas_q,1)
+    T = fk3001(robot, meas_q(i,:));
+    task_xyz(i,:) = [T(1,4), T(2,4), T(3,4)];
+end
+
+%% ------------------- PLOTS -------------------
+% Task space plot
+figure;
+scatter3(task_xyz(:,1), task_xyz(:,2), task_xyz(:,3), 12, 'filled');
+grid on; axis equal;
+xlabel('X (mm)'); ylabel('Y (mm)'); zlabel('Z (mm)');
+title('End Effector Path in Task Space (X-Y-Z)');
+
+% Joint space plot (theta2-theta3-theta4)
+figure;
+scatter3(meas_q(:,2), meas_q(:,3), meas_q(:,4), 12, 'filled');
+grid on; axis equal;
+xlabel('\theta_2 (deg)'); ylabel('\theta_3 (deg)'); zlabel('\theta_4 (deg)');
+title('End Effector Path in Joint Space (\theta_2-\theta_3-\theta_4)');
