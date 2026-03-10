@@ -4,10 +4,6 @@
 
 It is recommended to add the src file to your MATLAB path and then develop code for each lab in a separate folder (lab1, lab2, etc.). This way you can modify your Robot class without needing to copy it over to each new lab folder.
 
-<img width="570" height="450" alt="3dspaceLab2" src="https://github.com/user-attachments/assets/ef1bae20-accc-45f6-b704-47b80d03dd8f" />
-
-<img width="570" height="450" alt="JointsLab2" src="https://github.com/user-attachments/assets/cf8aaae1-1518-4831-b2a4-9101b9aed5fb" />
-
 ---
 
 ## Dummy Mode
