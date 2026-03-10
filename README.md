@@ -1,8 +1,6 @@
 # Welcome to my 4DOF Pick and Sort Robotic Manipulator repository
 
-<video src="https://github.com/ColinTruong28/4DOF_Robotic_Pick_and_Sort_Arm/releases/download/v1.0/20260306_112427.mp4" controls muted style="max-width: 100%;">
-  Your browser does not support the video tag.
-</video>
+https://github.com/ColinTruong28/4DOF_Robotic_Pick_and_Sort_Arm/releases/download/v1.0/20260306_112427.mp4
 
 It is recommended to add the src file to your MATLAB path and then develop code for each lab in a separate folder (lab1, lab2, etc.). This way you can modify your Robot class without needing to copy it over to each new lab folder.
 
