@@ -1,6 +1,6 @@
 # Welcome to my 4DOF Pick and Sort Robotic Manipulator repository
 
-<video src="[https://github.com/ColinTruong28/4DOF_Robotic_Pick_and_Sort_Arm/releases/tag/v1.0](https://github.com/ColinTruong28/4DOF_Robotic_Pick_and_Sort_Arm/releases/download/v1.0/20260306_112427.mp4)" controls muted style="max-width: 100%;">
+<video src="https://github.com/ColinTruong28/4DOF_Robotic_Pick_and_Sort_Arm/releases/download/v1.0/20260306_112427.mp4" controls muted style="max-width: 100%;">
   Your browser does not support the video tag.
 </video>
 
